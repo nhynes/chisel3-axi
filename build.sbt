@@ -1,5 +1,6 @@
 name := "chisel3-axi"
 version := "0.1.0"
+organization := "edu.berkeley.cs"
 
 scalaVersion := "2.12.7"
 scalacOptions ++= Seq(

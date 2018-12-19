@@ -1,5 +1,5 @@
 name := "chisel3-axi"
-version := "0.1.0"
+version := "0.1.0-SNAPSHOT"
 organization := "edu.berkeley.cs"
 
 scalaVersion := "2.12.7"

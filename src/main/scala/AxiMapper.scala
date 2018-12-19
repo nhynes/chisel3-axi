@@ -169,12 +169,11 @@ class AxiS2MM(addrT: AxiAddr with AxiWriteAddr,
 }
 
 object AxiS2MM {
-  def apply(sm: DecoupledIO[AxiStream], mm: AxiMaster, maxTxLen: Int = DefaultMaxTxLen) = {
+  def apply(mm: AxiMaster, maxTxLen: Int = DefaultMaxTxLen) = {
     val s2mm = Module(new AxiS2MM(mm.writeAddr.bits, mm.writeData.bits, maxTxLen))
     s2mm.io.mm.addr <> mm.writeAddr
     s2mm.io.mm.data <> mm.writeData
     mm.writeResp.ready := true.B
-    s2mm.io.s <> sm
     s2mm
   }
 }

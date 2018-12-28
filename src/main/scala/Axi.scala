@@ -1,8 +1,9 @@
 package axi
 
 import chisel3._
-import chisel3.util._
+import chisel3.core.BundleLitBinding
 import chisel3.internal.firrtl.Width
+import chisel3.util._
 
 class AxiAddr(val addrWidth: Int, val dataWidth: Int, val idWidth: Int, val userWidth: Int)
     extends Bundle {
@@ -33,6 +34,36 @@ class AxiAddr(val addrWidth: Int, val dataWidth: Int, val idWidth: Int, val user
     region := 0.U
     user := 0.U
   }
+
+  def Lit(addr: UInt,
+          len: UInt,
+          id: UInt = 0.U,
+          size: UInt = log2Ceil(dataWidth / 8).U,
+          burst: UInt = 1.U,
+          cache: UInt = 0.U,
+          lock: Bool = false.B,
+          prot: UInt = 0.U,
+          qos: UInt = 0.U,
+          region: UInt = 0.U,
+          user: UInt = 0.U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.addr -> litArgOfBits(addr),
+          clone.len -> litArgOfBits(len),
+          clone.id -> litArgOfBits(id),
+          clone.size -> litArgOfBits(size),
+          clone.burst -> litArgOfBits(burst),
+          clone.cache -> litArgOfBits(cache),
+          clone.lock -> litArgOfBits(lock),
+          clone.prot -> litArgOfBits(prot),
+          clone.qos -> litArgOfBits(qos),
+          clone.region -> litArgOfBits(region),
+          clone.user -> litArgOfBits(user),
+        )))
+    clone
+  }
 }
 
 object AxiAddr {
@@ -56,6 +87,15 @@ abstract class AxiData(val dataWidth: Int, val userWidth: Int) extends Bundle {
   // used for "downcasting" Axi(Read|Write)Data
   def getId: Option[UInt] = None
   def getStrb: Option[UInt] = None
+
+  def LitMap(data: UInt, last: UInt, user: UInt = 0.U) = {
+    val clone = cloneType
+    Map(
+      clone.data -> litArgOfBits(data),
+      clone.last -> litArgOfBits(last),
+      clone.user -> litArgOfBits(user),
+    )
+  }
 }
 
 class AxiReadData(dataWidth: Int, val idWidth: Int, userWidth: Int)
@@ -68,6 +108,18 @@ class AxiReadData(dataWidth: Int, val idWidth: Int, userWidth: Int)
   }
 
   override def getId = Some(id)
+
+  def Lit(data: UInt, last: Bool, user: UInt = 0.U, id: UInt = 0.U, resp: UInt = 0.U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.id -> litArgOfBits(id),
+          clone.resp -> litArgOfBits(resp),
+        ) ++ super.LitMap(data, last, user)
+      ))
+    clone
+  }
 }
 
 object AxiReadData {
@@ -85,6 +137,20 @@ class AxiWriteData(dataWidth: Int, userWidth: Int)
   }
 
   override def getStrb = Some(strb)
+
+  def Lit(data: UInt,
+          last: Bool,
+          user: UInt = 0.U,
+          strb: UInt = (Math.pow(2, dataWidth).toInt - 1).U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.strb -> litArgOfBits(strb),
+        ) ++ super.LitMap(data, last, user)
+      ))
+    clone
+  }
 }
 
 object AxiWriteData {
@@ -94,13 +160,26 @@ object AxiWriteData {
 }
 
 class AxiWriteResp(val idWidth: Int, val userWidth: Int) extends Bundle {
-  val id = UInt(idWidth.W)
   val resp = UInt(2.W)
-  val user = UInt(userWidth.W) // optional
+  val id = UInt(idWidth.W)
+  val user = UInt(userWidth.W)
 
   def initDefault() = {
     id := 0.U
     user := 0.U
+  }
+
+  def Lit(id: UInt, resp: UInt = 0.U, user: UInt = 0.U) {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.id -> litArgOfBits(id),
+          clone.resp -> litArgOfBits(resp),
+          clone.user -> litArgOfBits(user),
+        )
+      ))
+    clone
   }
 }
 

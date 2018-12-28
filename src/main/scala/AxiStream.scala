@@ -1,6 +1,7 @@
 package axi
 
 import chisel3._
+import chisel3.core.BundleLitBinding
 import chisel3.util._
 
 /** Axi stream signals.
@@ -17,21 +18,44 @@ import chisel3.util._
 class AxiStream(val dataWidth: Int, val userWidth: Int, val destWidth: Int, val idWidth: Int)
     extends Bundle {
   val dataBytes = dataWidth / 8
+  def allStrb = (Math.pow(2, dataBytes).toInt - 1).U
+
   val data = UInt(dataWidth.W)
+  val last = Bool()
   val strb = UInt(dataBytes.W)
   val keep = UInt(dataBytes.W)
-  val last = Bool()
   val user = UInt(userWidth.W)
   val dest = UInt(destWidth.W)
   val id = UInt(idWidth.W)
 
   def initDefault() = {
-    val allStrb = (Math.pow(2, dataBytes).toInt - 1).U
     keep := allStrb
     strb := allStrb
     user := 0.U
     dest := 0.U
     id := 0.U
+  }
+
+  def Lit(data: UInt,
+          last: Bool,
+          strb: UInt = allStrb,
+          keep: UInt = allStrb,
+          user: UInt = 0.U,
+          dest: UInt = 0.U,
+          id: UInt = 0.U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.data -> litArgOfBits(data),
+          clone.last -> litArgOfBits(last),
+          clone.strb -> litArgOfBits(strb),
+          clone.keep -> litArgOfBits(keep),
+          clone.user -> litArgOfBits(user),
+          clone.dest -> litArgOfBits(dest),
+          clone.id -> litArgOfBits(id),
+        )))
+    clone
   }
 }
 

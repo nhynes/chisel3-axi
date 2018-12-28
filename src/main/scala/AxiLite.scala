@@ -1,11 +1,23 @@
 package axi
 
 import chisel3._
+import chisel3.core.BundleLitBinding
 import chisel3.util._
 
 class AxiLiteAddr(val addrWidth: Int) extends Bundle {
   val addr = UInt(addrWidth.W)
   val prot = UInt(3.W) // optional, but included by vivado
+
+  def Lit(addr: UInt, prot: UInt = 0.U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.addr -> litArgOfBits(addr),
+          clone.prot -> litArgOfBits(prot),
+        )))
+    clone
+  }
 }
 
 object AxiLiteAddr {
@@ -16,6 +28,17 @@ class AxiLiteWriteData(val dataWidth: Int) extends Bundle {
   require(dataWidth == 32 || dataWidth == 64, "AxiLite `dataWidth` must be 32 or 64")
   val data = UInt(dataWidth.W)
   val strb = UInt((dataWidth / 8).W)
+
+  def Lit(data: UInt, strb: UInt = (Math.pow(2, dataWidth).toInt - 1).U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.data -> litArgOfBits(data),
+          clone.strb -> litArgOfBits(strb),
+        )))
+    clone
+  }
 }
 
 object AxiLiteWriteData {
@@ -26,6 +49,17 @@ class AxiLiteReadData(val dataWidth: Int) extends Bundle {
   require(dataWidth == 32 || dataWidth == 64, "AxiLite `dataWidth` must be 32 or 64")
   val data = UInt(dataWidth.W)
   val resp = UInt(2.W)
+
+  def Lit(data: UInt, resp: UInt = 0.U) = {
+    val clone = cloneType
+    clone.selfBind(
+      BundleLitBinding(
+        Map(
+          clone.data -> litArgOfBits(data),
+          clone.resp -> litArgOfBits(resp),
+        )))
+    clone
+  }
 }
 
 object AxiLiteReadData {

@@ -87,15 +87,6 @@ abstract class AxiData(val dataWidth: Int, val userWidth: Int) extends Bundle {
   // used for "downcasting" Axi(Read|Write)Data
   def getId: Option[UInt] = None
   def getStrb: Option[UInt] = None
-
-  def LitMap(data: UInt, last: UInt, user: UInt = 0.U) = {
-    val clone = cloneType
-    Map(
-      clone.data -> litArgOfBits(data),
-      clone.last -> litArgOfBits(last),
-      clone.user -> litArgOfBits(user),
-    )
-  }
 }
 
 class AxiReadData(dataWidth: Int, val idWidth: Int, userWidth: Int)
@@ -114,9 +105,12 @@ class AxiReadData(dataWidth: Int, val idWidth: Int, userWidth: Int)
     clone.selfBind(
       BundleLitBinding(
         Map(
+          clone.data -> litArgOfBits(data),
+          clone.last -> litArgOfBits(last),
+          clone.user -> litArgOfBits(user),
           clone.id -> litArgOfBits(id),
           clone.resp -> litArgOfBits(resp),
-        ) ++ super.LitMap(data, last, user)
+        )
       ))
     clone
   }
@@ -146,8 +140,11 @@ class AxiWriteData(dataWidth: Int, userWidth: Int)
     clone.selfBind(
       BundleLitBinding(
         Map(
+          clone.data -> litArgOfBits(data),
+          clone.last -> litArgOfBits(last),
+          clone.user -> litArgOfBits(user),
           clone.strb -> litArgOfBits(strb),
-        ) ++ super.LitMap(data, last, user)
+        )
       ))
     clone
   }

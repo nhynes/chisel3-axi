@@ -53,6 +53,8 @@ abstract class AxiMapper(val streamT: AxiStream,
                          val dataDirection: SpecifiedDirection,
                          val maxTxLen: Int)
     extends Module {
+  val ddstr = if (dataDirection == SpecifiedDirection.Input) "Input" else "Output"
+
   val dataBytes = dataT.dataWidth / 8
   val state = RegInit(WaitParams)
 
@@ -68,8 +70,8 @@ abstract class AxiMapper(val streamT: AxiStream,
 
   io.mm.addr.bits.initDefault
   io.mm.addr.bits.addr := addr
-  io.mm.addr.bits.len := burstBeatsLeft - 1.U
-  io.mm.addr.valid := state === SendAddr
+  io.mm.addr.bits.len := (beatsLeft - 1.U).min(0xff.U)
+  io.mm.addr.valid := state === SendAddr || (state === SendData && burstBeatsLeft === 0.U)
 
   switch(state) {
     is(WaitParams) {
@@ -81,7 +83,6 @@ abstract class AxiMapper(val streamT: AxiStream,
 
     is(SendAddr) {
       when(io.mm.addr.ready) {
-        addr := addr + (burstBeatsLeft << log2Ceil(dataBytes))
         state := SendData
       }
     }
@@ -95,10 +96,10 @@ abstract class AxiMapper(val streamT: AxiStream,
       when(didTransfer) {
         burstBeatsLeft := burstBeatsLeft - 1.U
         beatsLeft := beatsLeft - 1.U
+        addr := addr + dataBytes.U
         when(burstBeatsLeft === 0.U) {
-          beatsLeft := beatsLeft // no new beat will fall through
-          burstBeatsLeft := beatsLeft.min(MaxBurstLen.U)
-          state := Mux(beatsLeft === 0.U, WaitParams, SendAddr)
+          burstBeatsLeft := beatsLeft.min(MaxBurstLen.U) - 1.U
+          state := Mux(beatsLeft === 0.U, WaitParams, SendData)
         }
       }
     }

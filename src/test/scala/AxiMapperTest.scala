@@ -47,7 +47,7 @@ abstract class AxiMapperTest[M <: AxiMapper](c: M, numBytes: Int) extends PeekPo
   def sendInner(): Unit
   def sendPost(): Unit
 
-  for (_ <- 0 until numBursts) {
+  for (burstNum <- 0 until numBursts) {
     val burstBeats = Math.min(beatsLeft, BurstMaxBeats)
 
     // expect addr is correct
@@ -56,17 +56,16 @@ abstract class AxiMapperTest[M <: AxiMapper](c: M, numBytes: Int) extends PeekPo
     expect(c.io.mm.addr.bits.len, burstBeats - 1)
     poke(c.io.mm.addr.ready, true)
 
-    // accept addr, enter data state
+    // accept addr
     poke(c.io.mm.addr.ready, true)
     sendPre()
-    step(1)
+    if (burstNum == 0) step(1) // enter (or stay in) data state
     poke(c.io.mm.addr.ready, false)
 
     for (_ <- 0 until burstBeats) {
       sendInner()
       beatsLeft -= 1
     }
-    step(1)
     addr += burstBeats * DmaBytes
   }
   step(1)
@@ -88,11 +87,11 @@ class AxiMM2STest(c: AxiMM2S, numBytes: Int) extends AxiMapperTest(c, numBytes) 
     poke(c.io.mm.data.bits.user, userData)
     poke(c.io.mm.data.bits.last, last)
     poke(c.io.mm.data.valid, true)
+    expect(c.io.params.ready, false)
     step(1)
     expect(c.io.s.valid, true)
     expect(c.io.s.bits.data, readData)
     expect(c.io.s.bits.last, last)
-    expect(c.io.params.ready, false)
   }
 
   def sendPost() = {
